@@ -63,7 +63,7 @@ Comment utiliser ce projet ?
 Ce projet a été développé sur Google Colab. Pour l'exécuter :
 
 1.  Clonez ce repository :
-    git clone https://github.com/votre-username/GNN-Intrusion-Detection.git
+    git clone https://github.com/Kellaikram/GNN-Intrusion-Detection.git
 2.  Ouvrez le fichier .ipynb dans Google Colab ou Jupyter Notebook.
 3.  Assurez-vous d'installer PyTorch Geometric avant de lancer les cellules :
     !pip install torch_geometric
