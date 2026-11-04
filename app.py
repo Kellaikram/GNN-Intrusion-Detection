@@ -89,7 +89,7 @@ def predict(model, x_scaled):
 scaler, encoders, columns, models = load_artifacts()
 
 st.title("🛡️ GNN Intrusion Detection System")
-st.caption("Classification du trafic réseau (Normal / Attack) avec GraphSAGE et GAT, entraînés sur KDD99.")
+st.caption("Classification du trafic réseau (Normal / Attack) avec GraphSAGE et GAT.")
 
 tab_detect, tab_perf = st.tabs(["Détection", "Performance des modèles"])
 
