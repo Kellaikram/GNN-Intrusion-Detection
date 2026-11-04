@@ -9,7 +9,7 @@ from sklearn.neighbors import NearestNeighbors
 from src.models import GAT, GraphSAGE
 
 K = 5
-MAX_ROWS = 25000
+MAX_ROWS = 5000
 
 st.set_page_config(page_title="GNN IDS", page_icon="🛡️", layout="wide")
 
