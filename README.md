@@ -1,70 +1,88 @@
-
 # GNN Intrusion Detection System (IDS)
 
-Ce projet utilise les **Réseaux de Neurones sur Graphes (GNN)** pour la détection d'intrusions réseau. L'objectif est de classifier le trafic réseau en deux catégories : **Normal** ou **Attack** (Attaque), en se basant sur un dataset contenant 41 caractéristiques (features) par nœud.
+[![CI](https://github.com/Kellaikram/GNN-Intrusion-Detection/actions/workflows/ci.yml/badge.svg)](https://github.com/Kellaikram/GNN-Intrusion-Detection/actions/workflows/ci.yml)
+[![Demo](https://img.shields.io/badge/demo-Streamlit-FF4B4B)](https://gnn-intrusion-detection-kwlymbfznwtctdbt7dbjmz.streamlit.app/)
 
-Le projet compare les performances de deux architectures GNN populaires : **GAT** (Graph Attention Network) et **GraphSAGE**.
+Détection d'intrusions réseau avec des **Réseaux de Neurones sur Graphes (GNN)**. Le projet classe chaque flux réseau en **Normal** ou **Attack** et compare deux architectures : **GraphSAGE** et **GAT**.
 
----
+**Démo en ligne : https://gnn-intrusion-detection-kwlymbfznwtctdbt7dbjmz.streamlit.app/**
+
+![Dashboard](docs/dashboard.png)
+
+## Fonctionnalités
+
+- Chargement d'un fichier KDD99 / NSL-KDD (`.csv` ou `.txt`, avec ou sans en-tête) ou d'un échantillon de démonstration
+- Prédiction Normal / Attack pour chaque flux, avec la probabilité d'attaque
+- Choix du modèle (GraphSAGE ou GAT), métriques et graphique
+- Si le fichier contient la vraie classe (`label_reel`), calcul de l'accuracy
+- Export des résultats en CSV
 
 ## Dataset
-- **Nombre total de nœuds (exemples) :** 494,021
-- **Nombre de caractéristiques (features) :** 41 (Type KDD99/NSL-KDD)
-- **Classes :** `normal` (14,493 tests) vs `attack` (59,611 tests)
-- **Tâche :** Classification Binaire de Nœuds (Node Classification).
 
----
+- **KDD99** (entraînement et test) : 494 021 flux, 41 features, classification binaire (normal / attack)
+- Test set : 74 104 exemples (14 493 normal, 59 611 attack)
+- **NSL-KDD** (`KDDTest+`, 22 544 flux) : utilisé uniquement pour mesurer la généralisation
 
-## Architectures des Modèles
+## Méthode
 
-### 1. Modèle GAT (Graph Attention Network)
-- **Architecture :** GATConv (128 unités) ➔ ELU ➔ GATConv (2 unités, sortie)
-- **Entraînement :** 100 Epochs
-- **Loss Finale :** `0.0995`
+1. Encodage des 3 colonnes catégorielles (`protocol_type`, `service`, `flag`) avec `LabelEncoder`, puis standardisation avec `StandardScaler`.
+2. Construction du graphe par **k plus proches voisins (k = 5)** : chaque flux est un nœud relié à ses 5 voisins les plus proches.
+3. Classification de nœuds avec :
+   - **GraphSAGE** : `SAGEConv(41 → 64)` → ReLU → Dropout → `SAGEConv(64 → 2)`
+   - **GAT** : `GATConv(41 → 64, heads=2)` → ELU → `GATConv(128 → 2)`
+4. Entraînement : 100 epochs, Adam (lr = 0,005, weight decay = 5e-4), CrossEntropyLoss, sur Google Colab.
 
-### 2. Modèle GraphSAGE
-- **Architecture :** SAGEConv (64 unités) ➔ ReLU ➔ Dropout ➔ SAGEConv (2 unités, sortie)
-- **Entraînement :** 100 Epochs
-- **Loss Finale :** `0.0076`
+## Résultats
 
----
+Test set KDD99 (74 104 exemples) :
 
-## Résultats et Évaluation (Test Set: 74,104 exemples)
+| Modèle | Accuracy |
+|---|---|
+| GAT | 99,71 % |
+| GraphSAGE | 99,84 % |
 
-Les deux modèles ont montré des performances exceptionnelles sur l'ensemble de test, avec un léger avantage pour GraphSAGE en termes d'accuracy globale et de convergence (Loss plus faible).
+Évaluation sur NSL-KDD `KDDTest+` (GraphSAGE, 22 544 flux) : **77,1 %** d'accuracy.
 
-| Métrique | GAT (Graph Attention Network) | GraphSAGE |
-| :--- | :---: | :---: |
-| **Accuracy** | **99.71 %** | **99.84 %** |
-| **Précision (Normal/Attack)** | 0.99 / 1.00 | 0.99 / 1.00 |
-| **Recall (Normal/Attack)** | 1.00 / 1.00 | 1.00 / 1.00 |
-| **F1-Score Macro** | 1.00 | 1.00 |
+## Limites
 
-### Rapport de Classification (GraphSAGE) :
+- KDD99 date de 1999. Les 99,8 % obtenus sur son test set ne garantissent pas les mêmes performances sur du trafic actuel.
+- Sur NSL-KDD, le modèle détecte moins d'attaques qu'il n'y en a : les attaques absentes de l'entraînement ne sont pas reconnues (changement de distribution).
+- Le graphe de l'application est construit sur le fichier chargé (limité à 5 000 lignes), et non sur les 494 021 flux de l'entraînement.
+- Le modèle attend les 41 features KDD99. Du trafic brut doit d'abord être transformé dans ce format.
 
-              precision    recall  f1-score   support
+## Lancer le projet
 
-      normal       0.99      1.00      1.00     14493
-      attack       1.00      1.00      1.00     59611
+```bash
+git clone https://github.com/Kellaikram/GNN-Intrusion-Detection.git
+cd GNN-Intrusion-Detection
+pip install -r requirements.txt
+streamlit run app.py
+```
 
-    accuracy                           1.00     74104
-   macro avg       1.00      1.00      1.00     74104
-weighted avg       1.00      1.00      1.00     74104
+Lancer les tests et le lint :
 
-Technologies Utilisées
+```bash
+pytest
+ruff check src tests
+```
 
-  - Python 3
-  - PyTorch & PyTorch Geometric (PyG) (Pour la modélisation GNN)
-  - Scikit-Learn (Pour l'évaluation des performances)
-  - Google Colab (Environnement de développement et d'entraînement)
+## Structure
 
-Comment utiliser ce projet ?
+```
+├── app.py                  # dashboard Streamlit
+├── src/models.py           # classes GraphSAGE et GAT
+├── tests/                  # tests pytest
+├── models/                 # poids (.pt), scaler et encoders (.joblib)
+├── data/sample.csv         # échantillon de démonstration
+├── notebooks/              # entraînement (Google Colab)
+└── .github/workflows/ci.yml
+```
 
-Ce projet a été développé sur Google Colab. Pour l'exécuter :
+## CI/CD
 
-1.  Clonez ce repository :
-    git clone https://github.com/Kellaikram/GNN-Intrusion-Detection.git
-2.  Ouvrez le fichier .ipynb dans Google Colab ou Jupyter Notebook.
-3.  Assurez-vous d'installer PyTorch Geometric avant de lancer les cellules :
-    !pip install torch_geometric
-4.  Exécutez le notebook cellule par cellule.
+- **CI** : à chaque pull request, GitHub Actions installe les dépendances, lance `ruff` puis `pytest`. Un merge n'est fait que si les vérifications passent.
+- **CD** : Streamlit Community Cloud est relié à la branche `main` et redéploie l'application à chaque merge.
+
+## Technologies
+
+Python, PyTorch, PyTorch Geometric, scikit-learn, pandas, Streamlit, pytest, ruff, GitHub Actions, Google Colab.
